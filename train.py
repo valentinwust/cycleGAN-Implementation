@@ -1,4 +1,4 @@
-from options import TrainOptions
+from util import TrainOptions
 from model import *
 
 if __name__ == '__main__':

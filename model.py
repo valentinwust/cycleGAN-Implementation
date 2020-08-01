@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import itertools
 import networks
+import os
+from util import save_image, tensor_to_image
 
 
 ####################
@@ -21,6 +23,7 @@ class CycleGANModel():
         self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')
         self.lambda_idt = 0.5
         self.loss_lambda = 10.0
+        self.visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_B', 'real_B', 'fake_A', 'rec_B', 'idt_A']
         
         # Define models
         self.model_names = ['G_A', 'G_B', 'D_A', 'D_B']
@@ -33,6 +36,7 @@ class CycleGANModel():
         self.criterionGAN = networks.GANLoss().to(self.device)
         self.criterionCycle = nn.L1Loss().to(self.device)
         self.criterionIdt = nn.L1Loss().to(self.device)
+        self.loss_names = ['D_A', 'G_A', 'cycle_A', 'idt_A', 'D_B', 'G_B', 'cycle_B', 'idt_B']
         
         # Define optimizers
         self.optimizers = []
@@ -74,15 +78,13 @@ class CycleGANModel():
         self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_B),True)
         self.loss_G_B = self.criterionGAN(self.netD_B(self.fake_A),True)
         # Cycle loss
-        self.loss_cycle_A = self.criterionCycle(self.rec_A,self.real_A)
-        self.loss_cycle_B = self.criterionCycle(self.rec_B,self.real_B)
+        self.loss_cycle_A = self.loss_lambda* self.criterionCycle(self.rec_A,self.real_A)
+        self.loss_cycle_B = self.loss_lambda* self.criterionCycle(self.rec_B,self.real_B)
         # Identity loss
-        self.loss_idt_A = self.criterionIdt(self.idt_A,self.real_B)
-        self.loss_idt_B = self.criterionIdt(self.idt_B,self.real_A)
+        self.loss_idt_A = self.loss_lambda*self.lambda_idt* self.criterionIdt(self.idt_A,self.real_B)
+        self.loss_idt_B = self.loss_lambda*self.lambda_idt* self.criterionIdt(self.idt_B,self.real_A)
         # Total loss
-        self.loss_G = self.loss_G_A + self.loss_G_B
-        self.loss_G += self.loss_lambda*(self.loss_cycle_A + self.loss_cycle_B)
-        self.loss_G += self.loss_lambda*self.lambda_idt*(self.loss_idt_A + self.loss_idt_B)
+        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
         self.loss_G.backward()
     
     def backward_D(self):
@@ -115,6 +117,42 @@ class CycleGANModel():
         self.backward_D()
         self.optimizer_D.step()
         
+    
+    def load_model(self,name):
+        for model in self.model_names:
+            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+'.pth'
+            getattr(self, 'net' + model).module.load_state_dict(torch.load(path))
+    
+    def save_model(self,name):
+        for model in self.model_names:
+            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+'.pth'
+            torch.save(getattr(self, 'net' + model).module.cpu().state_dict(), path)
+    
+    def get_losses(self):
+        losses = dict()
+        for loss in self.loss_names:
+            losses[loss] = float(getattr(self, 'loss_' + loss).cpu().detach().numpy())
+        return losses
+    
+    def get_loss_string(self):
+        losses = self.get_losses()
+        loss_string = ""
+        for loss_name, loss in losses.items():
+            loss_string += loss_name +": "+ "{:.3f}".format(loss)+" "
+        return loss_string
+    
+    def get_visuals(self):
+        visuals = dict()
+        for visual in self.visual_names:
+            visuals[visual] = tensor_to_image(getattr(self, visual)) # .cpu().detach().permute(0,2,3,1).numpy()
+        return visuals
+    
+    def save_visuals(self):
+        visuals = self.get_visuals()
+        for visual, image in visuals.items():
+            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/images/"+visual+".png"
+            save_image(path,image)
+      
     
     def update_learning_rate(self):
         """ Update the learning rate at the end of each epoch

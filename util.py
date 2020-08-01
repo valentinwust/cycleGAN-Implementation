@@ -1,4 +1,6 @@
 import argparse
+import cv2
+from PIL import Image
 
 class TrainOptions():
     def __init__(self):
@@ -17,3 +19,13 @@ class TrainOptions():
         
         # Parse arguments
         self.opt = parser.parse_args()
+
+
+def save_image(path,image):
+    cv2.imwrite(path, image)
+
+def tensor_to_image(image):
+    image_numpy = image.cpu().detach().permute(0,2,3,1).numpy()
+    image_numpy = (image_numpy[0]+1)/2 * 255.0
+    
+    return image_numpy
