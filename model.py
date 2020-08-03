@@ -93,13 +93,13 @@ class CycleGANModel():
         """ Loss for the discriminators
         """
         # D_A
-        loss_D_A_real = self.criterionGAN(self.netD_A(self.real_A),True)
-        loss_D_A_fake = self.criterionGAN(self.netD_A(self.fake_A.detach()),False)
+        loss_D_A_real = self.criterionGAN(self.netD_A(self.real_B),True)
+        loss_D_A_fake = self.criterionGAN(self.netD_A(self.fake_B.detach()),False)
         self.loss_D_A = (loss_D_A_real + loss_D_A_fake)*0.5
         self.loss_D_A.backward()
         # D_B
-        loss_D_B_real = self.criterionGAN(self.netD_B(self.real_B),True)
-        loss_D_B_fake = self.criterionGAN(self.netD_B(self.fake_B.detach()),False)
+        loss_D_B_real = self.criterionGAN(self.netD_B(self.real_A),True)
+        loss_D_B_fake = self.criterionGAN(self.netD_B(self.fake_A.detach()),False)
         self.loss_D_B = (loss_D_B_real + loss_D_B_fake)*0.5
         self.loss_D_B.backward()
     
