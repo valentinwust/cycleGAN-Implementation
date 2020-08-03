@@ -119,22 +119,36 @@ class CycleGANModel():
         
     
     def load_model(self,name=""):
+        """ Load model weights from disc
+            
+            E.g. for model name test_model, loads the models
+            checkpoints/test_model/models/nameG_A.pth etc.
+        """
         for model in self.model_names:
             path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+'.pth'
             getattr(self, 'net' + model).module.load_state_dict(torch.load(path))
     
     def save_model(self, epoch, name="", **kwargs):
+        """ Save the current models
+            
+            E.g. for model name test_model, saves the models to
+            checkpoints/test_model/models/nameG_A.pth etc.
+        """
         for model in self.model_names:
             path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+str(epoch)'.pth'
             torch.save(getattr(self, 'net' + model).module.cpu().state_dict(), path)
     
     def get_losses(self):
+        """ Returns a dict containing the current losses
+        """
         losses = dict()
         for loss in self.loss_names:
             losses[loss] = float(getattr(self, 'loss_' + loss).cpu().detach().numpy())
         return losses
     
     def get_loss_string(self):
+        """ Returns the current losses merged into one string
+        """
         losses = self.get_losses()
         loss_string = ""
         for loss_name, loss in losses.items():
@@ -142,12 +156,16 @@ class CycleGANModel():
         return loss_string
     
     def get_visuals(self):
+        """ Returns a dict containing the current visuals
+        """
         visuals = dict()
         for visual in self.visual_names:
             visuals[visual] = tensor_to_image(getattr(self, visual)) # .cpu().detach().permute(0,2,3,1).numpy()
         return visuals
     
     def save_visuals(self, idx, **kwargs):
+        """ Save current visuals, i.e. real_A, fake_B etc., to disc
+        """
         visuals = self.get_visuals()
         for visual, image in visuals.items():
             path = self.opt.checkpoints_dir +"/"+self.opt.name+"/images/"+visual+str{idx}+".png"

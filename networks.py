@@ -63,7 +63,7 @@ class ResNetGenerator(nn.Module):
     """ ResNet based generator.
         
         Downsamples the image, runs it through residual blocks,
-        then upsamples backt to original size.
+        then upsamples back to original size.
     """
     def __init__(self, n_input, n_output, n_res_blocks=9, n_filters=64, n_down_up_sampling=2):
         """ 
