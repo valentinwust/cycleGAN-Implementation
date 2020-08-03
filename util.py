@@ -8,23 +8,36 @@ import torchvision.transforms as transforms
 import random
 import torch.utils.data
 
-class TrainOptions():
-    def __init__(self):
-        parser = argparse.ArgumentParser()
-        
-        # Epochs
-        parser.add_argument("--epoch", type=int, default=0, help="start training at epoch")
-        parser.add_argument("--n_epochs", type=int, default=100, help="number of training epochs with normal learning rate")
-        parser.add_argument("--n_epochs_decay", type=int, default=100, help="number of epochs over which learning rate decays to zero")
-        # Optimizer
-        parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam')
-        parser.add_argument('--lr', type=float, default=0.0002, help='initial learning rate for adam')
-        # Channels
-        parser.add_argument('--n_input', type=int, default=3, help='# of input image channels')
-        parser.add_argument('--n_output', type=int, default=3, help='# of output image channels')
-        
-        # Parse arguments
-        self.opt = parser.parse_args()
+def get_opt():
+    parser = argparse.ArgumentParser()
+    
+    # Epochs
+    parser.add_argument("--epoch", type=int, default=0, help="start training at epoch")
+    parser.add_argument("--n_epochs", type=int, default=100, help="number of training epochs with normal learning rate")
+    parser.add_argument("--n_epochs_decay", type=int, default=100, help="number of epochs over which learning rate decays to zero")
+    parser.add_argument("--sample_interval", type=int, default=100, help="evaluation frequency")
+    # Optimizer
+    parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam')
+    parser.add_argument('--lr', type=float, default=0.0002, help='initial learning rate for adam')
+    parser.add_argument('--batch_size', type=int, default=1, help='size of mini-batches')
+    # Channels
+    parser.add_argument('--n_input', type=int, default=3, help='# of input image channels')
+    parser.add_argument('--n_output', type=int, default=3, help='# of output image channels')
+
+    parser.add_argument('--gpu_ids', type=int, nargs='+', default=[0], help='ids for GPUs')
+    parser.add_argument('--checkpoints_dir', type=str, default="checkpoints", help='path to checkpoint dir')
+    parser.add_argument('--name', type=str, default='cycleGAN', help='name of model, e.g. star_witcher')
+    parser.add_argument('--dataroot', type=str, default="datasets/star_witcher_data", help='path to data set')
+    parser.add_argument('--num_threads', type=int, default=4, help='number of parallel threads for dataloader')
+
+    parser.add_argument('--load_model', type=bool, default=False, help='load trained model?')
+
+    parser.add_argument('--crop_size', type=int, default=256, help='size of training images')
+    
+    # Parse arguments
+    opt = parser.parse_args()
+
+    return opt
 
 
 def save_image(path,image):
@@ -64,22 +77,25 @@ class Hotkey_handler():
         self.hotkeys = {} #stires data as pressed key: function to call
         self.functions2call = [] #list of functions to call because their key has been pressed
 
-        listener = keyboard.Listener(
+        self.listener = keyboard.Listener(
             on_press=self.on_press,
             on_release=self.on_release)
-        listener.start()
+        self.listener.start()
 
     def on_press(self, key):
         try:
             if key.char in self.hotkeys.keys():
                 function = self.hotkeys[key.char]
                 self.functions2call.append(function)
-                print(f'hotkey {key.char} pressed call function {function.__name__}')
+                pass
+                #print(f'hotkey {key.char} pressed call function {function.__name__}', end="")
             else:
-                print(f'hotkey {key.char} not known')
+                pass
+                #print(f'hotkey {key.char} not known', end="")
 
         except AttributeError:
-            print(f'special key {key} pressed')
+            pass
+            #print(f'special key {key} pressed')
 
     def on_release(self, key):
         if key == keyboard.Key.esc:
@@ -88,16 +104,21 @@ class Hotkey_handler():
 
     def add_hotkey(self, key, function):
         try:
-            key = key.chr()
-            hotkeys.update({key: function})
+            assert len(key) == 1
+            self.hotkeys.update({key: function})
+            print(f'hotkey {key} will call function {function.__name__}')
         except:
-            print("key {key} not recognized!")
+            print(f"new hotkey {key} not recognized!")
+            #self.listener.stop()
+            #breakpoint()
 
     def get_function_list(self):
-        return self.functions2call
+        function_list = self.functions2call
+        self.functions2call = []
+        return function_list
 
     def __del__(self): 
-        keyborad.Listener.stop()
+        self.listener.stop()
 
 def ensure_existance_paths(opt):
     """ Make sure dataset exists, and create folders for saving stuff if necessary
@@ -107,9 +128,9 @@ def ensure_existance_paths(opt):
     assert os.path.isdir(opt.dataroot+"/trainB")
     # Folders for saving stuff
     if not os.path.isdir(opt.checkpoints_dir +"/"+opt.name+"/images"):
-        os.mkdir(opt.checkpoints_dir +"/"+opt.name+"/images")
+        os.makedirs(opt.checkpoints_dir +"/"+opt.name+"/images", exist_ok=True)
     if not os.path.isdir(opt.checkpoints_dir +"/"+opt.name+"/models"):
-        os.mkdir(opt.checkpoints_dir +"/"+opt.name+"/models")
+        os.makedirs(opt.checkpoints_dir +"/"+opt.name+"/models", exist_ok=True)
     
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -142,8 +163,12 @@ class UnalignedDataset():
         self.B_size = len(self.B_paths)
         
         ###### Add transformations!
-        self.transform_A = transforms.ToTensor()
-        self.transform_B = transforms.ToTensor()
+        transform_list = []
+        transform_list.append(transforms.RandomCrop(opt.crop_size))
+        transform_list.append(transforms.ToTensor())
+        transform_list.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
+        self.transform_A = transforms.Compose(transform_list)
+        self.transform_B = transforms.Compose(transform_list)
 
     def __getitem__(self, index):
         """ 

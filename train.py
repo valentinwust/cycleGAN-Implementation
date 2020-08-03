@@ -1,7 +1,10 @@
 import time
-from tqdm import tqdm, t_range
-from util import TrainOptions, CustomDataLoader
+import torch
+from tqdm import tqdm
+
+import util
 from model import CycleGANModel
+from util import CustomDataLoader
 
 """ 
     Missing:
@@ -18,31 +21,14 @@ from model import CycleGANModel
 
 
 if __name__ == '__main__':
-    #opt = TrainOptions().opt # Does not work :(
-    
-    ##### Arguments that I use so far
-    import argparse
-    opt = argparse.ArgumentParser()
-    opt.lr = 0.0002
-    opt.beta1 = 0.5
-    opt.n_input = 3
-    opt.n_output = 3
-    opt.epoch = 0
-    opt.n_epochs = 100
-    opt.n_epochs_decay = 100
-    opt.gpu_ids = [0]
-    opt.checkpoints_dir = "checkpoints"
-    opt.name = "style_star_witcher_first"
-    opt.dataroot = "datasets/star_witcher_data"
-    opt.batch_size = 1
-    opt.num_threads = 4
-    opt.load_model=False
+    opt = util.get_opt() # Does not work :(
     
     model = CycleGANModel(opt)
     if opt.load_model:
         model.load_model("latest_net_") # Load old model
 
     dataloader = CustomDataLoader(opt) # Dataloader, training loop with enumerate(dataloader) etc.
+    print("Dataloader initialized")
 
     data = {"A":torch.ones((1,3,100,100)),"B":torch.zeros((1,3,100,100))} # Example for data
 
@@ -52,34 +38,45 @@ if __name__ == '__main__':
 
     #initialize status bars and logging bars
     epoch_size = len(dataloader)
-    epoch_bar = tqdm.trange(
-        opt.epoch,
-        opt.n_epochs,
+    epoch_bar = tqdm(
+        range(opt.epoch, opt.n_epochs),
         position=1,
         )
     batch_bar = tqdm(
         enumerate(dataloader),
         position=2,
         )
-    log_bar = tqdm.tqdm(position=4, bar_format='{desc}')
+    log_bar = tqdm(position=4, bar_format='{desc}')
+    print("Logging bars initialized")
+
+    def print_logs(**kwargs):
+         model.print_logs(print_fn=log_bar.set_description_str)
+         pass
+
+    def call_breakpoint(**kwargs):
+         breakpoint()
+         pass
 
     #start hotkey instance
-    hotkeys = utils.Hotkey_handler()
+    hotkeys = util.Hotkey_handler()
     hotkeys.add_hotkey('s', model.save_model)
     hotkeys.add_hotkey('v', model.save_visuals)
-    hotkeys.add_hotkey('u', lambda x: model.print_logs(print_fn=log_bar.set_description_str))
+    hotkeys.add_hotkey('u', print_logs)
+    hotkeys.add_hotkey('b', call_breakpoint)
+    print("Hotkeys initialized")
 
     prev_time = time.time()
+    print("start loop")
     for epoch in epoch_bar:
+        model.set_train()
         for i, batch in batch_bar:
 
             # -------------
             #  Train Model
             # -------------
                 
-            model.train()
             # Set model input
-            model.set_inputs = model(batch)
+            model.set_inputs(batch)
 
             model.optimize()
 

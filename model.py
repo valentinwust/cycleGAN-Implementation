@@ -22,7 +22,7 @@ class CycleGANModel():
         
         self.opt = opt
         self.gpu_ids = opt.gpu_ids
-        self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')
+        self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids and torch.cuda.is_available() else torch.device('cpu')
         self.lambda_idt = 0.5
         self.loss_lambda = 10.0
         self.visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_B', 'real_B', 'fake_A', 'rec_B', 'idt_A']
@@ -93,13 +93,13 @@ class CycleGANModel():
         """ Loss for the discriminators
         """
         # D_A
-        loss_D_A_real = self.criterionGAN(self.netD_A(self.real_A),True)
-        loss_D_A_fake = self.criterionGAN(self.netD_A(self.fake_A.detach()),False)
+        loss_D_A_real = self.criterionGAN(self.netD_A(self.real_B),True)
+        loss_D_A_fake = self.criterionGAN(self.netD_A(self.fake_B.detach()),False)
         self.loss_D_A = (loss_D_A_real + loss_D_A_fake)*0.5
         self.loss_D_A.backward()
         # D_B
-        loss_D_B_real = self.criterionGAN(self.netD_B(self.real_B),True)
-        loss_D_B_fake = self.criterionGAN(self.netD_B(self.fake_B.detach()),False)
+        loss_D_B_real = self.criterionGAN(self.netD_B(self.real_A),True)
+        loss_D_B_fake = self.criterionGAN(self.netD_B(self.fake_A.detach()),False)
         self.loss_D_B = (loss_D_B_real + loss_D_B_fake)*0.5
         self.loss_D_B.backward()
     
@@ -137,8 +137,14 @@ class CycleGANModel():
             checkpoints/test_model/models/nameG_A.pth etc.
         """
         for model in self.model_names:
-            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+str(epoch)'.pth'
-            torch.save(getattr(self, 'net' + model).module.cpu().state_dict(), path)
+            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+str(epoch)+'.pth'
+            net = getattr(self, 'net' + model)
+            if len(self.gpu_ids) > 0 and torch.cuda.is_available():
+                torch.save(net.module.cpu().state_dict(), path)
+                net.cuda(self.gpu_ids[0])
+            else:
+                torch.save(net.cpu().state_dict(), path)
+        print("models saved!")
     
     def get_losses(self):
         """ Returns a dict containing the current losses
@@ -170,7 +176,7 @@ class CycleGANModel():
         """
         visuals = self.get_visuals()
         for visual, image in visuals.items():
-            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/images/"+visual+str{idx}+".png"
+            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/images/"+visual+str(idx)+".png"
             save_image(path,image)
       
     
@@ -194,8 +200,27 @@ class CycleGANModel():
 
     def print_logs(self, print_fn=print):
         # Print log
-        log_string = f"[[D loss: {loss_D.item()}] \t[G loss: {loss_G.item()}, adv: {loss_GAN.item()}, cycle: {loss_cycle.item()}, identity: {loss_identity.item()}]]"
+        losses = self.get_losses()
+        log_string = ""
+        for key, loss in losses.items():
+            log_string += key
+            log_string += f"\t{loss:.4f}\t"
+
+        #log_string = f"[[D loss: {loss_D.item()}] \t[G loss: {loss_G.item()}, adv: {loss_GAN.item()}, cycle: {loss_cycle.item()}, identity: {loss_identity.item()}]]"
         #log_string = f"[[L2: {metric_L2.item()}] \t[L1: {metric_L1.item()}]]"
         print_fn(log_string)
+
+    def set_train(self):
+        self.netG_A.train()
+        self.netG_B.train()
+        self.netD_A.train()
+        self.netD_B.train()
+        
+    def set_eval(self):
+        self.netG_A.eval()
+        self.netG_B.eval()
+        self.netD_A.eval()
+        self.netD_B.eval()
+        
         
 

@@ -6,3 +6,5 @@ models.ipynb
 *.pth
 .ipynb_checkpoints/models-checkpoint.ipynb
 *.pyc
+checkpoints
+datasets
