@@ -3,7 +3,7 @@ import torch.nn as nn
 import itertools
 import networks
 import os
-from util import save_image, tensor_to_image
+from util import save_image, tensor_to_image, ensure_existance_paths
 
 
 ####################
@@ -18,6 +18,8 @@ class CycleGANModel():
         super(CycleGANModel, self).__init__()
         
         # Stuff
+        ensure_existance_paths(opt) # Create necessary directories for saving stuff
+        
         self.opt = opt
         self.gpu_ids = opt.gpu_ids
         self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')

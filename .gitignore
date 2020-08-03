@@ -1,0 +1,8 @@
+
+cycleGAN-Project/
+*.jpg
+dog.png
+models.ipynb
+*.pth
+.ipynb_checkpoints/models-checkpoint.ipynb
+*.pyc

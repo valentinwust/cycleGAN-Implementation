@@ -1,5 +1,5 @@
-from util import TrainOptions
-from model import CycleGANModel, CustomDataLoader
+from util import TrainOptions, CustomDataLoader
+from model import CycleGANModel
 
 """ 
     Missing:
