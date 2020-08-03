@@ -91,13 +91,13 @@ class CycleGANModel():
         """ Loss for the discriminators
         """
         # D_A
-        loss_D_A_real = self.criterionGAN(self.netD_A(self.real_B),True)
-        loss_D_A_fake = self.criterionGAN(self.netD_A(self.fake_B.detach()),False)
+        loss_D_A_real = self.criterionGAN(self.netD_A(self.real_A),True)
+        loss_D_A_fake = self.criterionGAN(self.netD_A(self.fake_A.detach()),False)
         self.loss_D_A = (loss_D_A_real + loss_D_A_fake)*0.5
         self.loss_D_A.backward()
         # D_B
-        loss_D_B_real = self.criterionGAN(self.netD_B(self.real_A),True)
-        loss_D_B_fake = self.criterionGAN(self.netD_B(self.fake_A.detach()),False)
+        loss_D_B_real = self.criterionGAN(self.netD_B(self.real_B),True)
+        loss_D_B_fake = self.criterionGAN(self.netD_B(self.fake_B.detach()),False)
         self.loss_D_B = (loss_D_B_real + loss_D_B_fake)*0.5
         self.loss_D_B.backward()
     
@@ -118,14 +118,14 @@ class CycleGANModel():
         self.optimizer_D.step()
         
     
-    def load_model(self,name):
+    def load_model(self,name=""):
         for model in self.model_names:
             path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+'.pth'
             getattr(self, 'net' + model).module.load_state_dict(torch.load(path))
     
-    def save_model(self,name):
+    def save_model(self, epoch, name="", **kwargs):
         for model in self.model_names:
-            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+'.pth'
+            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+str(epoch)'.pth'
             torch.save(getattr(self, 'net' + model).module.cpu().state_dict(), path)
     
     def get_losses(self):
@@ -147,10 +147,10 @@ class CycleGANModel():
             visuals[visual] = tensor_to_image(getattr(self, visual)) # .cpu().detach().permute(0,2,3,1).numpy()
         return visuals
     
-    def save_visuals(self):
+    def save_visuals(self, idx, **kwargs):
         visuals = self.get_visuals()
         for visual, image in visuals.items():
-            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/images/"+visual+".png"
+            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/images/"+visual+str{idx}+".png"
             save_image(path,image)
       
     
@@ -171,3 +171,11 @@ class CycleGANModel():
             if net is not None:
                 for param in net.parameters():
                     param.requires_grad = requires_grad
+
+    def print_logs(self, print_fn=print):
+        # Print log
+        log_string = f"[[D loss: {loss_D.item()}] \t[G loss: {loss_G.item()}, adv: {loss_GAN.item()}, cycle: {loss_cycle.item()}, identity: {loss_identity.item()}]]"
+        #log_string = f"[[L2: {metric_L2.item()}] \t[L1: {metric_L1.item()}]]"
+        print_fn(log_string)
+        
+

@@ -1,6 +1,8 @@
 import argparse
 import cv2
 from PIL import Image
+from pynput import keyboard
+
 
 class TrainOptions():
     def __init__(self):
@@ -29,3 +31,64 @@ def tensor_to_image(image):
     image_numpy = (image_numpy[0]+1)/2 * 255.0
     
     return image_numpy
+
+
+#----------------------------------------------------------------------------
+# Figures 2, 3, 10, 11, 12: Multi-resolution grid of uncurated result images.
+
+def draw_uncurated_result_figure(png, Gs, cx, cy, cw, ch, rows, lods, seed):
+    print(png)
+    latents = np.random.RandomState(seed).randn(sum(rows * 2**lod for lod in lods), Gs.input_shape[1])
+    images = Gs.run(latents, None, **synthesis_kwargs) # [seed, y, x, rgb]
+
+    canvas = PIL.Image.new('RGB', (sum(cw // 2**lod for lod in lods), ch * rows), 'white')
+    image_iter = iter(list(images))
+    for col, lod in enumerate(lods):
+        for row in range(rows * 2**lod):
+            image = PIL.Image.fromarray(next(image_iter), 'RGB')
+            image = image.crop((cx, cy, cx + cw, cy + ch))
+            image = image.resize((cw // 2**lod, ch // 2**lod), PIL.Image.ANTIALIAS)
+            canvas.paste(image, (sum(cw // 2**lod for lod in lods[:col]), row * ch // 2**lod))
+    canvas.save(png)
+
+class Hotkey_handler():
+    def __init__(self):
+        self.hotkeys = {} #stires data as pressed key: function to call
+        self.functions2call = [] #list of functions to call because their key has been pressed
+
+        listener = keyboard.Listener(
+            on_press=self.on_press,
+            on_release=self.on_release)
+        listener.start()
+
+    def on_press(self, key):
+        try:
+            if key.char in self.hotkeys.keys():
+                function = self.hotkeys[key.char]
+                self.functions2call.append(function)
+                print(f'hotkey {key.char} pressed call function {function.__name__}')
+            else:
+                print(f'hotkey {key.char} not known')
+
+        except AttributeError:
+            print(f'special key {key} pressed')
+
+    def on_release(self, key):
+        if key == keyboard.Key.esc:
+            # Stop listener
+            return False
+
+    def add_hotkey(self, key, function):
+        try:
+            key = key.chr()
+            hotkeys.update({key: function})
+        except:
+            print("key {key} not recognized!")
+
+    def get_function_list(self):
+        return self.functions2call
+
+    def __del__(self): 
+        keyborad.Listener.stop()
+
+

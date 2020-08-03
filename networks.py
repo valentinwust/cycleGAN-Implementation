@@ -69,7 +69,7 @@ class ResNetGenerator(nn.Module):
         """ 
         Parameters:
             n_input  (int)           - number of input channels
-            n_outpit (int)           - number of output channels
+            n_output (int)           - number of output channels
             n_res_blocks (int)       - number of residual blocks in between downsampling/upsampling layers
             n_filters (int)          - number of filters in the first and last conv layers
             n_down_up_sampling (int) - number of downsampling/upsampling layers
