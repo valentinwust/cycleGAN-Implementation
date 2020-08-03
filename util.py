@@ -1,6 +1,10 @@
 import argparse
 import cv2
 from PIL import Image
+import os
+import torchvision.transforms as transforms
+import random
+import torch.utils.data
 
 class TrainOptions():
     def __init__(self):
@@ -33,3 +37,85 @@ def tensor_to_image(image):
     image_numpy = (image_numpy[0]+1)/2 * 255.0
     
     return image_numpy
+
+
+IMG_EXTENSIONS = [
+    '.jpg', '.JPG', '.jpeg', '.JPEG',
+    '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
+    '.tif', '.TIF', '.tiff', '.TIFF'
+]
+
+def get_image_paths(directory):
+    files = sorted(os.listdir(directory))
+    images = []
+    for file in files:
+        if any(file.endswith(extension) for extension in IMG_EXTENSIONS):
+            images.append(directory + "/" + file)
+    return images
+
+class UnalignedDataset():
+    def __init__(self, opt):
+        
+        self.opt = opt
+        self.root = opt.dataroot
+        
+        self.dir_A = self.root+"/trainA"
+        self.dir_B = self.root+"/trainB"
+        
+        self.A_paths = get_image_paths(self.dir_A)
+        self.B_paths = get_image_paths(self.dir_B)
+        self.A_size = len(self.A_paths)
+        self.B_size = len(self.B_paths)
+        
+        ###### Add transformations!
+        self.transform_A = transforms.ToTensor()
+        self.transform_B = transforms.ToTensor()
+
+    def __getitem__(self, index):
+        """ 
+        """
+        
+        A_path = self.A_paths[index] # Image A with index index
+        B_path = self.B_paths[random.randint(0, self.B_size - 1)] # Random image from B to avoid fixed pairs
+        
+        A_img = Image.open(A_path)
+        B_img = Image.open(B_path)
+        
+        A = self.transform_A(A_img)
+        B = self.transform_B(B_img)
+
+        return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path}
+        
+    def __len__(self):
+        """ Return dataset size, take size of trainA
+        """
+        return self.A_size
+        
+class CustomDataLoader():
+    def __init__(self, opt):
+        self.opt = opt
+        self.dataset = UnalignedDataset(opt)
+        self.dataloader = torch.utils.data.DataLoader(
+            self.dataset,
+            batch_size=opt.batch_size,
+            shuffle=True)#,
+            #num_workers=int(opt.num_threads))
+            ###### Multiprocessing does not work!?
+
+    def load_data(self):
+        return self
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __iter__(self):
+        for i, data in enumerate(self.dataloader):
+            yield data
+    
+    
+    
+    
+    
+    
+    
+    

@@ -1,14 +1,16 @@
 from util import TrainOptions
-from model import *
+from model import CycleGANModel, CustomDataLoader
 
 """ 
     Missing:
-        - dataloader
         - argument parser
         - training loop
         - different initializations?
         - argument for loading old model
         - Create folders if not existing
+        - Transformations in data loader, crop etc.
+        - Multiprocessing for dataloader
+        - 4-channel support for saving images etc.
     
 """
 
@@ -30,6 +32,9 @@ if __name__ == '__main__':
     opt.gpu_ids = [0]
     opt.checkpoints_dir = "checkpoints"
     opt.name = "style_star_witcher_first"
+    opt.dataroot = "datasets/star_witcher_data"
+    opt.batch_size = 1
+    opt.num_threads = 4
     
     #model = CycleGANModel(opt) # Create Model
     #model.load_model("latest_net_") # Load old model
@@ -37,3 +42,4 @@ if __name__ == '__main__':
     #model.set_inputs(data) # Set input
     #model.optimize() # Do backprop etc.
     #model.save_visuals() # Save current visuals, i.e. real_A, fake_B etc.
+    #dataloader = CustomDataLoader(opt) # Dataloader, training loop with enumerate(dataloader) etc.
