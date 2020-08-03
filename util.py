@@ -22,9 +22,13 @@ class TrainOptions():
 
 
 def save_image(path,image):
+    """ Function for saving images, needs to be adjusted for four-channel data!
+    """
     cv2.imwrite(path, image)
 
 def tensor_to_image(image):
+    """ Returns the first image in image batch as RGB array
+    """
     image_numpy = image.cpu().detach().permute(0,2,3,1).numpy()
     image_numpy = (image_numpy[0]+1)/2 * 255.0
     
