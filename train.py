@@ -1,8 +1,7 @@
-from util import TrainOptions
-from model import *
 import time
 from tqdm import tqdm, t_range
-from model import CycleGANModel, CustomDataLoader
+from util import TrainOptions, CustomDataLoader
+from model import CycleGANModel
 
 """ 
     Missing:

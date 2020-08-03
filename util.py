@@ -99,7 +99,18 @@ class Hotkey_handler():
     def __del__(self): 
         keyborad.Listener.stop()
 
-
+def ensure_existance_paths(opt):
+    """ Make sure dataset exists, and create folders for saving stuff if necessary
+    """
+    # Image folders
+    assert os.path.isdir(opt.dataroot+"/trainA")
+    assert os.path.isdir(opt.dataroot+"/trainB")
+    # Folders for saving stuff
+    if not os.path.isdir(opt.checkpoints_dir +"/"+opt.name+"/images"):
+        os.mkdir(opt.checkpoints_dir +"/"+opt.name+"/images")
+    if not os.path.isdir(opt.checkpoints_dir +"/"+opt.name+"/models"):
+        os.mkdir(opt.checkpoints_dir +"/"+opt.name+"/models")
+    
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
     '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
@@ -107,6 +118,8 @@ IMG_EXTENSIONS = [
 ]
 
 def get_image_paths(directory):
+    assert os.path.isdir(directory)
+    
     files = sorted(os.listdir(directory))
     images = []
     for file in files:
