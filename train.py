@@ -8,14 +8,9 @@ from util import CustomDataLoader
 
 """ 
     Missing:
-        - argument parser
-        - training loop
         - different initializations?
         - argument for loading old model
-        - Create folders if not existing
-        - Transformations in data loader, crop etc.
-        - Multiprocessing for dataloader
-        - 4-channel support for saving images etc.
+        - 4-channel support for saving images, model etc.
     
 """
 
@@ -30,8 +25,6 @@ if __name__ == '__main__':
     dataloader = CustomDataLoader(opt) # Dataloader, training loop with enumerate(dataloader) etc.
     print("Dataloader initialized")
 
-    data = {"A":torch.ones((1,3,100,100)),"B":torch.zeros((1,3,100,100))} # Example for data
-
     # ----------
     #  Training
     # ----------
@@ -39,7 +32,7 @@ if __name__ == '__main__':
     #initialize status bars and logging bars
     epoch_size = len(dataloader)
     epoch_bar = tqdm(
-        range(opt.epoch, opt.n_epochs),
+        range(opt.epoch, opt.n_epochs+opt.n_epochs_decay),
         position=1,
         )
     batch_bar = tqdm(

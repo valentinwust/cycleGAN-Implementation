@@ -32,7 +32,10 @@ def get_opt():
 
     parser.add_argument('--load_model', type=bool, default=False, help='load trained model?')
 
-    parser.add_argument('--crop_size', type=int, default=256, help='size of training images')
+    parser.add_argument('--serial_batches', action='store_true', help='whether dataloader should not randomly select images from B')
+    parser.add_argument('--no_flip', action='store_true', help='prevent data augmentation (flipping images)')
+    parser.add_argument('--preprocess', type=str, default='crop', help='cropping of images at load time [crop | none]')
+    parser.add_argument('--crop_size', type=int, default=256, help='size of crop of training images')
     
     # Parse arguments
     opt = parser.parse_args()
@@ -131,7 +134,66 @@ def ensure_existance_paths(opt):
         os.makedirs(opt.checkpoints_dir +"/"+opt.name+"/images", exist_ok=True)
     if not os.path.isdir(opt.checkpoints_dir +"/"+opt.name+"/models"):
         os.makedirs(opt.checkpoints_dir +"/"+opt.name+"/models", exist_ok=True)
+
+
+####################
+# Transformations  #
+####################
+
+def get_transform(opt, method=Image.BICUBIC, convert=True):
+    transform_list = []
+
+    if 'crop' in opt.preprocess:
+        transform_list.append(transforms.RandomCrop(opt.crop_size))
+
+    if opt.preprocess == 'none':
+        transform_list.append(transforms.Lambda(lambda img: __make_power_base(img, base=4, method=method)))
+
+    if not opt.no_flip:
+        transform_list.append(transforms.RandomHorizontalFlip())
+
+    if convert:
+        transform_list += [transforms.ToTensor()]
+        transform_list += [transforms.Normalize([0.5]*opt.n_input, [0.5]*opt.n_input)]
     
+    return transforms.Compose(transform_list)
+
+
+
+def __resize(image, shape, method=Image.BICUBIC):
+    bands = image.split()
+    bands = [C.resize(shape,method) for C in bands]
+    if len(bands) == 3:
+        return Image.merge('RGB', bands)
+    elif len(bands) == 4:
+        return Image.merge('RGBA', bands)
+    else:
+        raise Exception('Image has neither three nor four channels!')
+
+def __make_power_base(img, base, method=Image.BICUBIC):
+    ow, oh = img.size
+    h = int(round(oh / base) * base)
+    w = int(round(ow / base) * base)
+    if h == oh and w == ow:
+        return img
+
+    __print_size_warning(ow, oh, w, h)
+    return __resize(img,(w, h), method)
+
+def __print_size_warning(ow, oh, w, h):
+    """Print warning information about image size(only print once)"""
+    if not hasattr(__print_size_warning, 'has_printed'):
+        print("The image size needs to be a multiple of 4. "
+              "The loaded image size was (%d, %d), so it was adjusted to "
+              "(%d, %d). This adjustment will be done to all images "
+              "whose sizes are not multiples of 4" % (ow, oh, w, h))
+        __print_size_warning.has_printed = True
+
+
+####################
+#     Dataset      #
+####################
+
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
     '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
@@ -162,20 +224,15 @@ class UnalignedDataset():
         self.A_size = len(self.A_paths)
         self.B_size = len(self.B_paths)
         
-        ###### Add transformations!
-        transform_list = []
-        transform_list.append(transforms.RandomCrop(opt.crop_size))
-        transform_list.append(transforms.ToTensor())
-        transform_list.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
-        self.transform_A = transforms.Compose(transform_list)
-        self.transform_B = transforms.Compose(transform_list)
+        self.transform_A = get_transform(opt)
+        self.transform_B = get_transform(opt)
 
     def __getitem__(self, index):
         """ 
         """
         
-        A_path = self.A_paths[index] # Image A with index index
-        B_path = self.B_paths[random.randint(0, self.B_size - 1)] # Random image from B to avoid fixed pairs
+        A_path = self.A_paths[index % self.A_size] # Image A with index index
+        B_path = self.B_paths[index % self.B_size if self.opt.serial_batches else random.randint(0, self.B_size - 1)] # Random image from B to avoid fixed pairs if not serial_batches
         
         A_img = Image.open(A_path)
         B_img = Image.open(B_path)
@@ -197,9 +254,8 @@ class CustomDataLoader():
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=opt.batch_size,
-            shuffle=True)#,
-            #num_workers=int(opt.num_threads))
-            ###### Multiprocessing does not work!?
+            shuffle=True,
+            num_workers=int(opt.num_threads))
 
     def load_data(self):
         return self

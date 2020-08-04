@@ -8,3 +8,4 @@ models.ipynb
 *.pyc
 checkpoints
 datasets
+train_test_stuff.py

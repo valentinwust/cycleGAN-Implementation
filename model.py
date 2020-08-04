@@ -211,16 +211,16 @@ class CycleGANModel():
         print_fn(log_string)
 
     def set_train(self):
-        self.netG_A.train()
-        self.netG_B.train()
-        self.netD_A.train()
-        self.netD_B.train()
+        """ Set all nets to train
+        """
+        for model in self.model_names:
+            getattr(self, "net"+model).train()
         
     def set_eval(self):
-        self.netG_A.eval()
-        self.netG_B.eval()
-        self.netD_A.eval()
-        self.netD_B.eval()
+        """ Set all nets to eval
+        """
+        for model in self.model_names:
+            getattr(self, "net"+model).eval()
         
         
 
