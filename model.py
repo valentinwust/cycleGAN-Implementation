@@ -5,6 +5,8 @@ import networks
 import os
 from util import save_image, tensor_to_image, ensure_existance_paths
 
+import wandb
+
 
 ####################
 #     CycleGAN     #
@@ -26,6 +28,7 @@ class CycleGANModel():
         self.lambda_idt = 0.5
         self.loss_lambda = 10.0
         self.visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_B', 'real_B', 'fake_A', 'rec_B', 'idt_A']
+        self.name = self.opt.name
         
         # Define models
         self.model_names = ['G_A', 'G_B', 'D_A', 'D_B']
@@ -49,9 +52,19 @@ class CycleGANModel():
         
         # Define schedulers
         self.schedulers = [networks.get_optimizer_scheduler(optimizer,opt) for optimizer in self.optimizers]
-        
-    
-    
+
+        self.set_train()
+
+        self.step = 0
+
+        wandb.init(
+            entity="star-witchers",
+            project="cycleGAN",
+            config=self.opt,
+            name=self.name,
+            dir=self.root_dir,
+            ) 
+
     def set_inputs(self,inputs):
         """ Set input images from dict inputs
         Parameters:
@@ -118,32 +131,54 @@ class CycleGANModel():
         self.optimizer_D.zero_grad()
         self.backward_D()
         self.optimizer_D.step()
+
+        self.step += 1
+        
+    def evaluate(self):
+        """ Do forward pass and optimize parameters
+        """
+        self.set_eval()
+        # Forward pass
+        #load eval dataset?
+        self.forward()
+        #pick fixed images and cycle them
+
+        #claculate L1 distance, L2 distance for both cycles, identity, transformatition
+        
+        #calcualte mean discriminator performance -> mean over all images from one class
+
+        #claculate FID scores
+
+        self.set_train()
         
     
-    def load_model(self,name=""):
+    def load_model(self,detail_name=""):
         """ Load model weights from disc
             
             E.g. for model name test_model, loads the models
             checkpoints/test_model/models/nameG_A.pth etc.
         """
         for model in self.model_names:
-            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+'.pth'
+            path = self.opt.checkpoints_dir +f"/{self.name}/models/{model}_{detail_name}.pth"
             getattr(self, 'net' + model).module.load_state_dict(torch.load(path))
     
-    def save_model(self, epoch, name="", **kwargs):
+    def save_model(self, detail_name="", **kwargs):
         """ Save the current models
             
             E.g. for model name test_model, saves the models to
             checkpoints/test_model/models/nameG_A.pth etc.
         """
         for model in self.model_names:
-            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/models/"+name+model+str(epoch)+'.pth'
+            path = self.opt.checkpoints_dir+f"/{self.name}/models/{model}_{detail_name}_{self.step:9d}.pth"
+            latest_path = self.opt.checkpoints_dir+f"/{self.name}/models/{model}_{detail_name}_latest.pth"
             net = getattr(self, 'net' + model)
             if len(self.gpu_ids) > 0 and torch.cuda.is_available():
                 torch.save(net.module.cpu().state_dict(), path)
+                torch.save(net.module.cpu().state_dict(), latest_path)
                 net.cuda(self.gpu_ids[0])
             else:
                 torch.save(net.cpu().state_dict(), path)
+                torch.save(net.cpu().state_dict(), latest_path)
         print("models saved!")
     
     def get_losses(self):
@@ -152,15 +187,16 @@ class CycleGANModel():
         losses = dict()
         for loss in self.loss_names:
             losses[loss] = float(getattr(self, 'loss_' + loss).cpu().detach().numpy())
+        wandb.log(losses, step=self.step)
         return losses
     
     def get_loss_string(self):
-        """ Returns the current losses merged into one string
+        """ Returns the latest losses merged into one string
         """
         losses = self.get_losses()
         loss_string = ""
         for loss_name, loss in losses.items():
-            loss_string += loss_name +": "+ "{:.3f}".format(loss)+" "
+            loss_string += loss_name + f": {loss:.3f}\t"
         return loss_string
     
     def get_visuals(self):
@@ -172,11 +208,12 @@ class CycleGANModel():
         return visuals
     
     def save_visuals(self, idx, **kwargs):
-        """ Save current visuals, i.e. real_A, fake_B etc., to disc
+        """ Save recent visuals, i.e. real_A, fake_B etc., to disc
         """
         visuals = self.get_visuals()
         for visual, image in visuals.items():
             path = self.opt.checkpoints_dir +"/"+self.opt.name+"/images/"+visual+str(idx)+".png"
+            wandb.log({visual: [wandb.Image(image, caption=visual)]}, step=self.step)
             save_image(path,image)
       
     
@@ -186,7 +223,8 @@ class CycleGANModel():
         for scheduler in self.schedulers:
             scheduler.step()
         new_lr = self.optimizers[0].param_groups[0]['lr']
-        print("New lr: {:.6f}".format(new_lr))
+        wandb.log({'lr': new_lr}, step=self.step)
+        #print("New lr: {:.6f}".format(new_lr))
     
     def set_requires_grad(self, nets, requires_grad=False):
         """ Set requies_grad = False for nets
@@ -200,14 +238,7 @@ class CycleGANModel():
 
     def print_logs(self, print_fn=print):
         # Print log
-        losses = self.get_losses()
-        log_string = ""
-        for key, loss in losses.items():
-            log_string += key
-            log_string += f"\t{loss:.4f}\t"
-
-        #log_string = f"[[D loss: {loss_D.item()}] \t[G loss: {loss_G.item()}, adv: {loss_GAN.item()}, cycle: {loss_cycle.item()}, identity: {loss_identity.item()}]]"
-        #log_string = f"[[L2: {metric_L2.item()}] \t[L1: {metric_L1.item()}]]"
+        log_string = self.get_loss_string()
         print_fn(log_string)
 
     def set_train(self):

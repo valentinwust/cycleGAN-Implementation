@@ -21,7 +21,9 @@ from util import CustomDataLoader
 
 
 if __name__ == '__main__':
-    opt = util.get_opt() # Does not work :(
+    opt = util.get_opt()
+
+    #add wandb to log images and losses
     
     model = CycleGANModel(opt)
     if opt.load_model:
@@ -68,7 +70,6 @@ if __name__ == '__main__':
     prev_time = time.time()
     print("start loop")
     for epoch in epoch_bar:
-        model.set_train()
         for i, batch in batch_bar:
 
             # -------------
@@ -84,20 +85,17 @@ if __name__ == '__main__':
             #  Log Progress
             # --------------
 
-            # Determine approximate time left
-            batches_done = epoch * len(dataloader) + i
-
             # If at sample interval save image
-            batches_done = epoch * epoch_size + i
-            if batches_done % opt.sample_interval == 0:
-                model.save_visuals(idx=batches_done)
+            if model.step % opt.log_batch_freq == 0:
                 model.print_logs(print_fn=log_bar.set_description_str)
+            if model.step % opt.visual_batch_freq == 0:
+                model.save_visuals()
+            if epoch % opt.save_epoch_freq == 0:
+                model.save_model()
+            if epoch % opt.eval_epoch_freq == 0:
+                model.evaluate()
 
             #key activated hotkeys and call their respective functions
             functions2call = hotkeys.get_function_list()
             for function in functions2call:
-                function(epoch=epoch, idx=i)
-
-        if opt.checkpoint_interval != -1 and epoch % opt.checkpoint_interval == 0:
-            # Save model checkpoints
-            model.save_model(epoch=epoch)
+                function()
