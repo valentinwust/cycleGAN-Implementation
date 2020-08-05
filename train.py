@@ -81,6 +81,7 @@ def train():
             functions2call = hotkeys.get_function_list()
             for function in functions2call:
                 function()
+        model.update_learning_rate()
 
         if epoch % opt.save_epoch_freq == 0:
             model.save_model()

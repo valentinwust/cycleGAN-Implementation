@@ -198,6 +198,8 @@ class CycleGANModel():
         loss_string = ""
         for loss_name, loss in losses.items():
             loss_string += loss_name + f": {loss:.3f}\t"
+        lr =  self.optimizers[0].param_groups[0]['lr']
+        loss_string += f"lr: {:.7f}\t"
         return loss_string
     
     def get_visuals(self):
