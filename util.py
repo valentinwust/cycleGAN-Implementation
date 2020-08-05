@@ -26,7 +26,7 @@ def get_opt():
     # Channels
     parser.add_argument('--n_input', type=int, default=3, help='# of input image channels')
     parser.add_argument('--n_output', type=int, default=3, help='# of output image channels')
-    parser.add_argument('--forward_mask', aciton='store_true', help='whether to forward the mask and concatenate it to the output')
+    parser.add_argument('--forward_mask', action='store_true', help='whether to forward the mask and concatenate it to the output')
 
     parser.add_argument('--gpu_ids', type=int, nargs='+', default=[0], help='ids for GPUs')
     parser.add_argument('--checkpoints_dir', type=str, default="checkpoints", help='path to checkpoint dir')

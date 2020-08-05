@@ -120,7 +120,7 @@ class ResNetGenerator(nn.Module):
     def forward(self, x):
         """ Forward pass """
         if self.forward_mask:
-            return torch.cat([self.model(x), x], dim=1)
+            return torch.cat([self.model(x), x[:,-1:,...], dim=1)
         else:
             return self.model(x)
 
