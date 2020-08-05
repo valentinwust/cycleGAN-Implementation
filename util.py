@@ -90,7 +90,6 @@ class Hotkey_handler(threading.Thread):
             self.on_press(input()) #waits to get input + Return
 
     def on_press(self, inp):
-        breakpoint()
         try:
             if inp in self.hotkeys.keys():
                 function = self.hotkeys[inp]

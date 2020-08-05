@@ -74,16 +74,16 @@ def train():
                 model.print_logs(print_fn=log_bar.set_description_str)
             if model.step % opt.visual_batch_freq == 0:
                 model.save_visuals()
-            if epoch % opt.save_epoch_freq == 0:
-                model.save_model()
             #if epoch % opt.eval_epoch_freq == 0:
             #    model.evaluate()
 
             #key activated hotkeys and call their respective functions
             functions2call = hotkeys.get_function_list()
-            breakpoint()
             for function in functions2call:
                 function()
+
+        if epoch % opt.save_epoch_freq == 0:
+            model.save_model()
 
 #def evaluate(dataloader, opt)
 
