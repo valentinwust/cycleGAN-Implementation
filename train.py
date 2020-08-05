@@ -14,8 +14,7 @@ from util import CustomDataLoader
     
 """
 
-
-if __name__ == '__main__':
+def train():
     opt = util.get_opt()
 
     #add wandb to log images and losses
@@ -27,12 +26,7 @@ if __name__ == '__main__':
     dataloader = CustomDataLoader(opt) # Dataloader, training loop with enumerate(dataloader) etc.
     print("Dataloader initialized")
 
-    # ----------
-    #  Training
-    # ----------
-
     #initialize status bars and logging bars
-    epoch_size = len(dataloader)
     epoch_bar = tqdm(
         range(opt.epoch, opt.n_epochs+opt.n_epochs_decay),
         position=1,
@@ -60,7 +54,6 @@ if __name__ == '__main__':
     hotkeys.add_hotkey('b', call_breakpoint)
     print("Hotkeys initialized")
 
-    prev_time = time.time()
     print("start loop")
     for epoch in epoch_bar:
         for i, batch in batch_bar:
@@ -85,10 +78,23 @@ if __name__ == '__main__':
                 model.save_visuals()
             if epoch % opt.save_epoch_freq == 0:
                 model.save_model()
-            if epoch % opt.eval_epoch_freq == 0:
-                model.evaluate()
+            #if epoch % opt.eval_epoch_freq == 0:
+            #    model.evaluate()
 
             #key activated hotkeys and call their respective functions
             functions2call = hotkeys.get_function_list()
             for function in functions2call:
                 function()
+
+#def evaluate(dataloader, opt)
+
+
+
+if __name__ == '__main__':
+
+    # ----------
+    #  Training
+    # ----------
+
+    train()
+

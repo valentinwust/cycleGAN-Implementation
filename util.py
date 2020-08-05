@@ -1,7 +1,7 @@
 import argparse
 import cv2
 from PIL import Image
-from pynput import keyboard
+import threading
 
 import os
 import torchvision.transforms as transforms
@@ -78,20 +78,22 @@ def tensor_to_image(image):
 #            canvas.paste(image, (sum(cw // 2**lod for lod in lods[:col]), row * ch // 2**lod))
 #    canvas.save(png)
 
-class Hotkey_handler():
-    def __init__(self):
+class Hotkey_handler(threading.Thread):
+    def __init__(self, name='keyboard-input-thread'):
+        super(Hotkey_handler, self).__init__(name=name)
         self.hotkeys = {} #stires data as pressed key: function to call
         self.functions2call = [] #list of functions to call because their key has been pressed
+        self.start()
 
-        self.listener = keyboard.Listener(
-            on_press=self.on_press,
-            on_release=self.on_release)
-        self.listener.start()
+    def run(self):
+        while True:
+            self.on_press(input()) #waits to get input + Return
 
-    def on_press(self, key):
+    def on_press(self, inp):
+        breakpoint()
         try:
-            if key.char in self.hotkeys.keys():
-                function = self.hotkeys[key.char]
+            if inp in self.hotkeys.keys():
+                function = self.hotkeys[inp]
                 self.functions2call.append(function)
                 pass
                 #print(f'hotkey {key.char} pressed call function {function.__name__}', end="")
@@ -102,11 +104,6 @@ class Hotkey_handler():
         except AttributeError:
             pass
             #print(f'special key {key} pressed')
-
-    def on_release(self, key):
-        if key == keyboard.Key.esc:
-            # Stop listener
-            return False
 
     def add_hotkey(self, key, function):
         try:
@@ -123,8 +120,6 @@ class Hotkey_handler():
         self.functions2call = []
         return function_list
 
-    def __del__(self): 
-        self.listener.stop()
 
 def ensure_existance_paths(opt):
     """ Make sure dataset exists, and create folders for saving stuff if necessary

@@ -11,7 +11,7 @@ def initialize_weights(layer, init_gain=0.02):
     if "Conv" in classname:
          nn.init.normal_(layer.weight.data, 0.0, init_gain)
          if hasattr(layer, 'bias') and layer.bias is not None:
-                init.constant_(layer.bias.data, 0.0)
+                nn.init.constant_(layer.bias.data, 0.0)
 
 def get_optimizer_scheduler(optimizer,opt):
     """ Return learning rate scheduler for optimizer

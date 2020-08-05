@@ -62,7 +62,6 @@ class CycleGANModel():
             project="cycleGAN",
             config=self.opt,
             name=self.name,
-            dir=self.root_dir,
             ) 
 
     def set_inputs(self,inputs):
@@ -93,11 +92,11 @@ class CycleGANModel():
         self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_B),True)
         self.loss_G_B = self.criterionGAN(self.netD_B(self.fake_A),True)
         # Cycle loss
-        self.loss_cycle_A = self.loss_lambda* self.criterionCycle(self.rec_A,self.real_A)
-        self.loss_cycle_B = self.loss_lambda* self.criterionCycle(self.rec_B,self.real_B)
+        self.loss_cycle_A = self.loss_lambda * self.criterionCycle(self.rec_A,self.real_A)
+        self.loss_cycle_B = self.loss_lambda * self.criterionCycle(self.rec_B,self.real_B)
         # Identity loss
-        self.loss_idt_A = self.loss_lambda*self.lambda_idt* self.criterionIdt(self.idt_A,self.real_B)
-        self.loss_idt_B = self.loss_lambda*self.lambda_idt* self.criterionIdt(self.idt_B,self.real_A)
+        self.loss_idt_A = self.loss_lambda * self.lambda_idt * self.criterionIdt(self.idt_A,self.real_B)
+        self.loss_idt_B = self.loss_lambda * self.lambda_idt * self.criterionIdt(self.idt_B,self.real_A)
         # Total loss
         self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
         self.loss_G.backward()
@@ -137,17 +136,19 @@ class CycleGANModel():
     def evaluate(self):
         """ Do forward pass and optimize parameters
         """
-        self.set_eval()
         # Forward pass
         #load eval dataset?
         self.forward()
         #pick fixed images and cycle them
+            #require list of indices in [0, 1000] and fill a set of 16 fixed indices
 
-        #claculate L1 distance, L2 distance for both cycles, identity, transformatition
+        #log L1 distance, L2 distance for both cycles, identity, transformatition -> calcualte mean later on
         
-        #calcualte mean discriminator performance -> mean over all images from one class
+        #log discriminator performance -> mean over all images from one class
 
         #claculate FID scores
+            #calculate activations for input image
+            #calculate acitvations for cycled image
 
         self.set_train()
         
@@ -207,12 +208,12 @@ class CycleGANModel():
             visuals[visual] = tensor_to_image(getattr(self, visual)) # .cpu().detach().permute(0,2,3,1).numpy()
         return visuals
     
-    def save_visuals(self, idx, **kwargs):
+    def save_visuals(self, **kwargs):
         """ Save recent visuals, i.e. real_A, fake_B etc., to disc
         """
         visuals = self.get_visuals()
         for visual, image in visuals.items():
-            path = self.opt.checkpoints_dir +"/"+self.opt.name+"/images/"+visual+str(idx)+".png"
+            path = self.opt.checkpoints_dir +"/{self.opt.name}/images/{visual}_{self.step}.png"
             wandb.log({visual: [wandb.Image(image, caption=visual)]}, step=self.step)
             save_image(path,image)
       
@@ -247,11 +248,19 @@ class CycleGANModel():
         for model in self.model_names:
             getattr(self, "net"+model).train()
         
-    def set_eval(self):
+    def start_eval(self):
         """ Set all nets to eval
         """
         for model in self.model_names:
             getattr(self, "net"+model).eval()
         
+    def finish_eval(self):
+        """ Reset all nets to eval
+        Calculate eval metrics
+        """
+        for model in self.model_names:
+            getattr(self, "net"+model).train()
+
+        #clauclate means, FID score etc.
         
 
