@@ -40,11 +40,9 @@ def train():
 
     def print_logs(**kwargs):
          model.print_logs(print_fn=log_bar.set_description_str)
-         pass
 
     def call_breakpoint(**kwargs):
          breakpoint()
-         pass
 
     #start hotkey instance
     hotkeys = util.Hotkey_handler()
