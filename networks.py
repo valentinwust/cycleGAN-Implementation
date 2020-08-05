@@ -105,9 +105,14 @@ class ResNetGenerator(nn.Module):
                       nn.ReLU(True)]
         
         # Last convolutional layer
-        model += [nn.ReflectionPad2d(3),
-                  nn.Conv2d(n_filters, n_output, kernel_size = 7),
-                  nn.Tanh()]
+        if forward_mask:
+            model += [nn.ReflectionPad2d(3),
+                      nn.Conv2d(n_filters, n_output-1, kernel_size = 7),
+                      nn.Tanh()]
+        else:
+            model += [nn.ReflectionPad2d(3),
+                      nn.Conv2d(n_filters, n_output, kernel_size = 7),
+                      nn.Tanh()]
         
         # Assemble model
         self.model = nn.Sequential(*model)
@@ -120,7 +125,7 @@ class ResNetGenerator(nn.Module):
     def forward(self, x):
         """ Forward pass """
         if self.forward_mask:
-            return torch.cat([self.model(x), x[:,-1:,...], dim=1)
+            return torch.cat([self.model(x), x[:,-1:,...]], dim=1)
         else:
             return self.model(x)
 
