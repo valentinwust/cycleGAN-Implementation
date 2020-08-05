@@ -67,7 +67,7 @@ class ResNetGenerator(nn.Module):
         Downsamples the image, runs it through residual blocks,
         then upsamples back to original size.
     """
-    def __init__(self, n_input, n_output, n_res_blocks=9, n_filters=64, n_down_up_sampling=2):
+    def __init__(self, n_input, n_output, forward_mask=True, n_res_blocks=9, n_filters=64, n_down_up_sampling=2):
         """ 
         Parameters:
             n_input  (int)           - number of input channels
@@ -114,10 +114,15 @@ class ResNetGenerator(nn.Module):
         
         # Initialize weights
         self.model.apply(initialize_weights)
+
+        self.forward_mask = forward_mask
     
     def forward(self, x):
         """ Forward pass """
-        return self.model(x)
+        if self.forward_mask:
+            return torch.cat([self.model(x), x], dim=1)
+        else:
+            return self.model(x)
 
 
 ####################

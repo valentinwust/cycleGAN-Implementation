@@ -32,8 +32,8 @@ class CycleGANModel():
         
         # Define models
         self.model_names = ['G_A', 'G_B', 'D_A', 'D_B']
-        self.netG_A = networks.to_device(networks.ResNetGenerator(opt.n_input, opt.n_output),self.gpu_ids)
-        self.netG_B = networks.to_device(networks.ResNetGenerator(opt.n_input, opt.n_output),self.gpu_ids)
+        self.netG_A = networks.to_device(networks.ResNetGenerator(opt.n_input, opt.n_output, opt.forward_mask),self.gpu_ids)
+        self.netG_B = networks.to_device(networks.ResNetGenerator(opt.n_input, opt.n_output, opt.forward_mask),self.gpu_ids)
         self.netD_A = networks.to_device(networks.NLayerDiscriminator(opt.n_output),self.gpu_ids)
         self.netD_B = networks.to_device(networks.NLayerDiscriminator(opt.n_output),self.gpu_ids)
         
