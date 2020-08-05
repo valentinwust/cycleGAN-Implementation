@@ -26,18 +26,6 @@ def train():
     dataloader = CustomDataLoader(opt) # Dataloader, training loop with enumerate(dataloader) etc.
     print("Dataloader initialized")
 
-    #initialize status bars and logging bars
-    epoch_bar = tqdm(
-        range(opt.epoch, opt.n_epochs+opt.n_epochs_decay),
-        position=1,
-        )
-    batch_bar = tqdm(
-        enumerate(dataloader),
-        position=2,
-        )
-    log_bar = tqdm(position=4, bar_format='{desc}')
-    print("Logging bars initialized")
-
     def print_logs(**kwargs):
          model.print_logs(print_fn=log_bar.set_description_str)
 
@@ -52,8 +40,20 @@ def train():
     hotkeys.add_hotkey('b', call_breakpoint)
     print("Hotkeys initialized")
 
+    #initialize status bars and logging bars
+    epoch_bar = tqdm(
+        range(opt.epoch, opt.n_epochs+opt.n_epochs_decay),
+        position=1,
+        )
+    log_bar = tqdm(position=4, bar_format='{desc}')
+
     print("start loop")
     for epoch in epoch_bar:
+        batch_bar = tqdm(
+            enumerate(dataloader),
+            position=2,
+            total=len(dataloader),
+            )
         for i, batch in batch_bar:
 
             # -------------
