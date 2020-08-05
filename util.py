@@ -94,9 +94,7 @@ class Hotkey_handler(threading.Thread):
         try:
             if inp in self.hotkeys.keys():
                 function = self.hotkeys[inp]
-                function()
-                print(f'hotkey {inp} pressed call function {function.__name__}', end="")
-                #self.functions2call.append(function)
+                self.functions2call.append(function)
                 #pass
                 #print(f'hotkey {key.char} pressed call function {function.__name__}', end="")
             else:

@@ -81,6 +81,7 @@ def train():
 
             #key activated hotkeys and call their respective functions
             functions2call = hotkeys.get_function_list()
+            breakpoint()
             for function in functions2call:
                 function()
 
