@@ -258,7 +258,7 @@ class CustomDataLoader():
         return self
 
     def __len__(self):
-        return len(self.dataset)
+        return len(self.dataloader)
 
     def __iter__(self):
         for i, data in enumerate(self.dataloader):
