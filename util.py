@@ -61,14 +61,9 @@ def tensor_to_image(image):
     return image_numpy
 
 
-##----------------------------------------------------------------------------
-## Figures 2, 3, 10, 11, 12: Multi-resolution grid of uncurated result images.
-#
-#def draw_uncurated_result_figure(png, Gs, cx, cy, cw, ch, rows, lods, seed):
-#    print(png)
-#    latents = np.random.RandomState(seed).randn(sum(rows * 2**lod for lod in lods), Gs.input_shape[1])
-#    images = Gs.run(latents, None, **synthesis_kwargs) # [seed, y, x, rgb]
-#
+# Multi-resolution grid
+
+#def draw_multires_figure(png, cx, cy, cw, ch, rows):
 #    canvas = PIL.Image.new('RGB', (sum(cw // 2**lod for lod in lods), ch * rows), 'white')
 #    image_iter = iter(list(images))
 #    for col, lod in enumerate(lods):
@@ -213,6 +208,7 @@ class UnalignedDataset():
         
         self.opt = opt
         self.root = opt.dataroot
+        self.channels = opt.n_inputs
         
         self.dir_A = self.root+"/trainA"
         self.dir_B = self.root+"/trainB"
@@ -232,11 +228,11 @@ class UnalignedDataset():
         A_path = self.A_paths[index % self.A_size] # Image A with index index
         B_path = self.B_paths[index % self.B_size if self.opt.serial_batches else random.randint(0, self.B_size - 1)] # Random image from B to avoid fixed pairs if not serial_batches
         
-        A_img = Image.open(A_path)
-        B_img = Image.open(B_path)
+        A_img = np.array(Image.open(A_path))[...,:self.channels]
+        B_img = np.array(Image.open(B_path))[...,:self.channels]
         
-        A = self.transform_A(A_img)
-        B = self.transform_B(B_img)
+        A = self.transform_A(Image.from_array(A_img))
+        B = self.transform_B(Image.from_array(B_img))
 
         return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path}
         
