@@ -14,8 +14,7 @@ from util import CustomDataLoader
     
 """
 
-def train(model):
-    opt = util.get_opt()
+def train(model, opt):
 
     #add wandb to log images and losses
     
@@ -154,6 +153,7 @@ def evaluate(model):
 
 
 if __name__ == '__main__':
+    opt = util.get_opt()
 
     model = CycleGANModel(opt)
     if opt.load_model:
@@ -163,5 +163,5 @@ if __name__ == '__main__':
     #  Training
     # ----------
 
-    train(model)
+    train(modelm, opt)
 
