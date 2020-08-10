@@ -3,7 +3,7 @@ import torch.nn as nn
 import itertools
 import networks
 import os
-from util import save_image, tensor_to_image, ensure_existance_paths
+from util import save_image, tensor_to_image, ensure_existance_paths, ensure_existance_paths_test
 
 import wandb
 
@@ -199,7 +199,7 @@ class CycleGANModel():
         for loss_name, loss in losses.items():
             loss_string += loss_name + f": {loss:.3f}\t"
         lr =  self.optimizers[0].param_groups[0]['lr']
-        loss_string += f"lr: {:.7f}\t"
+        loss_string += f"lr: {lr:.7f}\t"
         return loss_string
     
     def get_visuals(self):
@@ -266,3 +266,51 @@ class CycleGANModel():
         #clauclate means, FID score etc.
         
 
+class GeneratorTestModel():
+    def __init__(self, opt):
+        """ 
+        Parameters:
+        """
+        
+        # Stuff
+        ensure_existance_paths_test(opt) # Create necessary directories for saving stuff
+        
+        self.opt = opt
+        self.gpu_ids = opt.gpu_ids
+        self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids and torch.cuda.is_available() else torch.device('cpu')
+        self.name = self.opt.name
+        
+        # Define model
+        self.netG = networks.to_device(networks.ResNetGenerator(opt.n_input, opt.n_output, opt.forward_mask),self.gpu_ids)
+        self.netG.eval()
+        self.load_model(opt.load_model_name)
+
+    def set_inputs(self,inputs):
+        """ Set input images from dict inputs
+        Parameters:
+            
+        """
+        self.real = inputs.to(self.device)
+    
+    def forward(self):
+        """ Perform forward pass
+        """
+        self.fake = self.netG(self.real)
+    
+    def load_model(self,detail_name=""):
+        """ Load model weights from disc
+            
+            E.g. for model name test_model, loads the models
+            checkpoints/test_model/models/nameG_A.pth etc.
+        """
+        path = self.opt.checkpoints_dir +f"/{self.name}/models/model_{detail_name}.pth"
+        self.netG.module.load_state_dict(torch.load(path))
+    
+    def save_generated(self, data):
+        """ Generate images from batch and save them
+        """
+        self.set_inputs(data["A"])
+        self.forward()
+        path = self.opt.checkpoints_dir +f"/{self.opt.name}/generated/{data['A_name']}_fake.png"
+        save_image(path,tensor_to_image(self.fake)[...,:3])
+        

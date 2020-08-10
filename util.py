@@ -34,7 +34,8 @@ def get_opt():
     parser.add_argument('--dataroot', type=str, default="datasets/star_witcher_data", help='path to data set')
     parser.add_argument('--num_threads', type=int, default=4, help='number of parallel threads for dataloader')
 
-    parser.add_argument('--load_model', type=bool, default=False, help='load trained model?')
+    parser.add_argument('--load_model', action='store_true', help='load trained model?')
+    parser.add_argument('--load_model_name', type=str, default="latest_net_", help='Name of load model')
 
     parser.add_argument('--serial_batches', action='store_true', help='whether dataloader should not randomly select images from B')
     parser.add_argument('--no_flip', action='store_true', help='prevent data augmentation (flipping images)')
@@ -52,11 +53,11 @@ def save_image(path,image):
     """
     cv2.imwrite(path, image)
 
-def tensor_to_image(image):
+def tensor_to_image(image,index=0):
     """ Returns the first image in image batch as RGB array
     """
     image_numpy = image.cpu().detach().permute(0,2,3,1).numpy()
-    image_numpy = (image_numpy[0]+1)/2 * 255.0
+    image_numpy = (image_numpy[index]+1)/2 * 255.0
     
     return image_numpy
 
@@ -132,6 +133,15 @@ def ensure_existance_paths(opt):
         os.makedirs(opt.checkpoints_dir +"/"+opt.name+"/images", exist_ok=True)
     if not os.path.isdir(opt.checkpoints_dir +"/"+opt.name+"/models"):
         os.makedirs(opt.checkpoints_dir +"/"+opt.name+"/models", exist_ok=True)
+
+def ensure_existance_paths_test(opt):
+    """ Make sure dataset exists, and create folders for saving stuff if necessary
+    """
+    # Image folders
+    assert os.path.isdir(opt.dataroot)
+    # Folders for saving stuff
+    if not os.path.isdir(opt.checkpoints_dir +"/"+opt.name+"/generated"):
+        os.makedirs(opt.checkpoints_dir +"/"+opt.name+"/generated", exist_ok=True)
 
 
 ####################
@@ -264,3 +274,36 @@ class CustomDataLoader():
     def __iter__(self):
         for i, data in enumerate(self.dataloader):
             yield data
+
+
+class TestDataset():
+    def __init__(self, opt):
+        
+        self.opt = opt
+        self.opt.no_flip = True
+        self.root = opt.dataroot
+        
+        self.dir_ = self.root
+        
+        self.paths = get_image_paths(self.dir_)
+        self.size = len(self.paths)
+        
+        self.transform = get_transform(self.opt)
+
+    def __getitem__(self, index):
+        """ 
+        """
+        
+        path = self.paths[index]
+        name, file_type = os.path.splitext(os.path.basename(path))
+        
+        img = Image.open(path)
+        
+        A = self.transform(img).unsqueeze(0)
+
+        return {'A': A, 'A_name': name}
+        
+    def __len__(self):
+        """ Return dataset size, take size of trainA
+        """
+        return self.size

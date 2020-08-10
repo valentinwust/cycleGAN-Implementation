@@ -8,8 +8,6 @@ from util import CustomDataLoader
 
 """ 
     Missing:
-        - different initializations?
-        - argument for loading old model
         - 4-channel support for saving images, model etc.
     
 """
@@ -21,7 +19,7 @@ def train():
     
     model = CycleGANModel(opt)
     if opt.load_model:
-        model.load_model("latest_net_") # Load old model
+        model.load_model(opt.load_model_name) # Load old model
 
     dataloader = CustomDataLoader(opt) # Dataloader, training loop with enumerate(dataloader) etc.
     print("Dataloader initialized")
