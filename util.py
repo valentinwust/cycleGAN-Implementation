@@ -7,6 +7,7 @@ import os
 import torchvision.transforms as transforms
 import random
 import torch.utils.data
+import numpy as np
 
 def get_opt():
     parser = argparse.ArgumentParser()
@@ -222,7 +223,7 @@ class UnalignedDataset():
         
         self.opt = opt
         self.root = opt.dataroot
-        self.channels = opt.n_inputs
+        self.channels = opt.n_input
         
         self.dir_A = self.root+"/trainA"
         self.dir_B = self.root+"/trainB"
@@ -245,8 +246,8 @@ class UnalignedDataset():
         A_img = np.array(Image.open(A_path))[...,:self.channels]
         B_img = np.array(Image.open(B_path))[...,:self.channels]
         
-        A = self.transform_A(Image.from_array(A_img))
-        B = self.transform_B(Image.from_array(B_img))
+        A = self.transform_A(Image.fromarray(A_img))
+        B = self.transform_B(Image.fromarray(B_img))
 
         return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path}
         
@@ -275,6 +276,48 @@ class CustomDataLoader():
         for i, data in enumerate(self.dataloader):
             yield data
 
+class EvalDataset():
+    def __init__(self, opt):
+        
+        self.opt = opt
+        self.opt.no_flip = True
+        self.root = opt.dataroot
+        
+        self.dirA = self.root + "/testAfull"
+        self.dirB = self.root + "/testBfull"
+        
+        self.pathsA = get_image_paths(self.dirA)
+        self.pathsB = get_image_paths(self.dirB)
+        if len(self.pathsB) == len(self.pathsA):
+            self.size = len(self.pathsA)
+        else:
+            self.size = min(len(self.pathsA), len(self.pathsB))
+            self.pathsA = self.pathsA[:self.size]
+            self.pathsB = self.pathsB[:self.size]
+        
+        self.transform = get_transform(self.opt)
+
+    def __getitem__(self, index):
+        """ 
+        """
+        
+        path = self.pathsA[index]
+        name, file_type = os.path.splitext(os.path.basename(path))
+        imgA = Image.open(path)
+
+        path = self.pathsB[index]
+        name, file_type = os.path.splitext(os.path.basename(path))
+        imgB = Image.open(path)
+        
+        A = self.transform(imgA).unsqueeze(0)
+        B = self.transform(imgB).unsqueeze(0)
+
+        return {'A': A, 'B': B}
+        
+    def __len__(self):
+        """ Return dataset size, take size of trainA
+        """
+        return self.size
 
 class TestDataset():
     def __init__(self, opt):

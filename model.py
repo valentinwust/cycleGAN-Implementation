@@ -4,6 +4,7 @@ import itertools
 import networks
 import os
 from util import save_image, tensor_to_image, ensure_existance_paths, ensure_existance_paths_test
+from tqdm import tqdm
 
 import wandb
 
@@ -133,26 +134,6 @@ class CycleGANModel():
 
         self.step += 1
         
-    def evaluate(self):
-        """ Do forward pass and optimize parameters
-        """
-        # Forward pass
-        #load eval dataset?
-        self.forward()
-        #pick fixed images and cycle them
-            #require list of indices in [0, 1000] and fill a set of 16 fixed indices
-
-        #log L1 distance, L2 distance for both cycles, identity, transformatition -> calcualte mean later on
-        
-        #log discriminator performance -> mean over all images from one class
-
-        #claculate FID scores
-            #calculate activations for input image
-            #calculate acitvations for cycled image
-
-        self.set_train()
-        
-    
     def load_model(self,detail_name=""):
         """ Load model weights from disc
             
@@ -223,15 +204,25 @@ class CycleGANModel():
         """ evaluate test iamges and save multires grid
         """
         self.set_eval()
-        evaluated_images = []
-        for image in list_of_images:
+
+        evaluated_images_A = []
+        evaluated_images_B = []
+        for image in tqdm(list_of_images):
             self.set_inputs(image)
             self.forward()
-            evaluated_images.append(tensor_to_image(self.fake)[...,:3])
-        path = self.opt.checkpoints_dir +f"/{self.opt.name}/eval_images/grid_{self.step}.png"
-        image = util.draw_multires_figure(np.array(images), n_columns=3)
-        wandb.log({'eval': [wandb.Image(image)]}, step=self.step)
-        save_image(path, image)
+            evaluated_images_A.append(tensor_to_image(self.fake_A)[...,:3])
+            evaluated_images_B.append(tensor_to_image(self.fake_B)[...,:3])
+            breakpoint()
+        path_A = self.opt.checkpoints_dir +f"/{self.opt.name}/eval_images/grid_fakeA_{self.step}.png"
+        path_B = self.opt.checkpoints_dir +f"/{self.opt.name}/eval_images/grid_fakeB_{self.step}.png"
+        image_A = util.draw_multires_figure(np.array(evaluated_images_A), n_columns=3)
+        image_B = util.draw_multires_figure(np.array(evaluated_images_B), n_columns=3)
+        wandb.log({'eval_fakeA': [wandb.Image(image_A)]}, step=self.step)
+        wandb.log({'eval_fakeB': [wandb.Image(image_B)]}, step=self.step)
+        save_image(path_A, image_A)
+        save_image(path_B, image_B)
+
+        self.set_train()
       
     
     def update_learning_rate(self):

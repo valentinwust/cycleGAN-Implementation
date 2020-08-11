@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 import util
 from model import CycleGANModel
-from util import CustomDataLoader
+from util import CustomDataLoader, EvalDataset
 
 from test import test
 
@@ -25,10 +25,11 @@ def train(model, opt):
     def call_breakpoint(**kwargs):
          breakpoint()
 
+    ed = EvalDataset(opt)
     list_of_eval_images = []
     for i in range(20):
-        image = next(TestDataset)['A']
-        list_of_eval_images.appned(image)
+        data_dict = ed[i]
+        list_of_eval_images.append(data_dict)
 
     #start hotkey instance
     hotkeys = util.Hotkey_handler()
@@ -36,7 +37,7 @@ def train(model, opt):
     hotkeys.add_hotkey('v', model.save_visuals)
     hotkeys.add_hotkey('u', print_logs)
     hotkeys.add_hotkey('b', call_breakpoint)
-    hotkeys.add_hotkey('e', lambda x: model.evaluate(list_of_eval_images))
+    hotkeys.add_hotkey('e', lambda: model.evaluate(list_of_eval_images))
     print("Hotkeys initialized")
 
     #initialize status bars and logging bars
