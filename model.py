@@ -207,21 +207,22 @@ class CycleGANModel():
         """
         self.set_eval()
 
-        evaluated_images_A = []
-        evaluated_images_B = []
-        for image in tqdm(list_of_images):
-            self.set_inputs(image)
-            self.forward()
-            evaluated_images_A.append(tensor_to_image(self.fake_A)[...,:3])
-            evaluated_images_B.append(tensor_to_image(self.fake_B)[...,:3])
-        path_A = self.opt.checkpoints_dir +f"/{self.opt.name}/eval_images/grid_fakeA_{self.step}.png"
-        path_B = self.opt.checkpoints_dir +f"/{self.opt.name}/eval_images/grid_fakeB_{self.step}.png"
-        image_A = util.draw_multires_figure(np.array(evaluated_images_A), n_columns=3)
-        image_B = util.draw_multires_figure(np.array(evaluated_images_B), n_columns=3)
-        wandb.log({'eval_fakeA': [wandb.Image(image_A)]}, step=self.step)
-        wandb.log({'eval_fakeB': [wandb.Image(image_B)]}, step=self.step)
-        save_image(path_A, np.array(image_A))
-        save_image(path_B, np.array(image_B))
+        with torch.no_grad():
+            evaluated_images_A = []
+            evaluated_images_B = []
+            for image in tqdm(list_of_images):
+                self.set_inputs(image)
+                self.forward()
+                evaluated_images_A.append(tensor_to_image(self.fake_A)[...,:3])
+                evaluated_images_B.append(tensor_to_image(self.fake_B)[...,:3])
+            path_A = self.opt.checkpoints_dir +f"/{self.opt.name}/eval_images/grid_fakeA_{self.step}.png"
+            path_B = self.opt.checkpoints_dir +f"/{self.opt.name}/eval_images/grid_fakeB_{self.step}.png"
+            image_A = util.draw_multires_figure(np.array(evaluated_images_A), n_columns=3)
+            image_B = util.draw_multires_figure(np.array(evaluated_images_B), n_columns=3)
+            wandb.log({'eval_fakeA': [wandb.Image(image_A)]}, step=self.step)
+            wandb.log({'eval_fakeB': [wandb.Image(image_B)]}, step=self.step)
+            save_image(path_A, np.array(image_A))
+            save_image(path_B, np.array(image_B))
 
         self.set_train()
       

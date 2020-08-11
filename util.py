@@ -68,7 +68,7 @@ def tensor_to_image(image,index=0):
 def draw_multires_figure(images, n_columns, imageres=(1920, 1080)):
     #check whter its enough iamges for columns or take the first n images
     imageres = np.shape(images)[1:3]
-    canvas = Image.new('RGB', (imageres[0] * 2 - imageres[0]//(2**n_columns), imageres[1] * 2), 'white') #pich the right resolution
+    canvas = Image.new('RGB', (imageres[1] * 2 - imageres[1]//(2**n_columns), imageres[0] * 2), 'white') #pich the right resolution
     n_images = 2 ** (n_columns + 1) - 2
     images = np.tile(images, (n_images//images.shape[0] + 1, 1, 1, 1))
     image_iter = iter(list(images))
@@ -80,8 +80,8 @@ def draw_multires_figure(images, n_columns, imageres=(1920, 1080)):
                 image = Image.fromarray(image.astype(np.uint8))
             except:
                 breakpoint()
-            image = image.resize((imageres[0] // res_fraction, imageres[1] // res_fraction), Image.ANTIALIAS)
-            canvas.paste(image, (col * imageres[0] // res_fraction, row * imageres[1] // res_fraction))
+            image = image.resize((imageres[1] // res_fraction, imageres[0] // res_fraction), Image.ANTIALIAS)
+            canvas.paste(image, (2 * imageres[1] - 2 * (imageres[1] // res_fraction), row * (imageres[0] // res_fraction)))
     return canvas
 
 class Hotkey_handler(threading.Thread):
@@ -310,7 +310,7 @@ class EvalDataset():
             self.pathsA = self.pathsA[:self.size]
             self.pathsB = self.pathsB[:self.size]
         
-        self.transform = get_transform(self.opt)
+        self.transform = get_transform_eval(self.opt)
 
     def __getitem__(self, index):
         """ 

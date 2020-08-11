@@ -27,8 +27,9 @@ def train(model, opt):
 
     ed = EvalDataset(opt)
     list_of_eval_images = []
+    np.random.seed(42)
     for i in range(20):
-        data_dict = ed[i]
+        data_dict = ed[np.random.randint(0, len(ed))]
         list_of_eval_images.append(data_dict)
 
     #start hotkey instance
