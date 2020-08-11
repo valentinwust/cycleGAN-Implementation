@@ -4,7 +4,9 @@ import itertools
 import networks
 import os
 from util import save_image, tensor_to_image, ensure_existance_paths, ensure_existance_paths_test
+import util
 from tqdm import tqdm
+import numpy as np
 
 import wandb
 
@@ -212,15 +214,14 @@ class CycleGANModel():
             self.forward()
             evaluated_images_A.append(tensor_to_image(self.fake_A)[...,:3])
             evaluated_images_B.append(tensor_to_image(self.fake_B)[...,:3])
-            breakpoint()
         path_A = self.opt.checkpoints_dir +f"/{self.opt.name}/eval_images/grid_fakeA_{self.step}.png"
         path_B = self.opt.checkpoints_dir +f"/{self.opt.name}/eval_images/grid_fakeB_{self.step}.png"
         image_A = util.draw_multires_figure(np.array(evaluated_images_A), n_columns=3)
         image_B = util.draw_multires_figure(np.array(evaluated_images_B), n_columns=3)
         wandb.log({'eval_fakeA': [wandb.Image(image_A)]}, step=self.step)
         wandb.log({'eval_fakeB': [wandb.Image(image_B)]}, step=self.step)
-        save_image(path_A, image_A)
-        save_image(path_B, image_B)
+        save_image(path_A, np.array(image_A))
+        save_image(path_B, np.array(image_B))
 
         self.set_train()
       

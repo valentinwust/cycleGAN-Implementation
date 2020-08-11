@@ -73,9 +73,13 @@ def draw_multires_figure(images, n_columns, imageres=(1920, 1080)):
     images = np.tile(images, (n_images//images.shape[0] + 1, 1, 1, 1))
     image_iter = iter(list(images))
     for col in range(n_columns):
-        res_fraction = 2**(col - 1)
-        for row in range(2 ** col):
-            image = Image.fromarray(next(image_iter))
+        res_fraction = 2**(col)
+        for row in range(2 ** (col+1)):
+            image = next(image_iter)
+            try:
+                image = Image.fromarray(image.astype(np.uint8))
+            except:
+                breakpoint()
             image = image.resize((imageres[0] // res_fraction, imageres[1] // res_fraction), Image.ANTIALIAS)
             canvas.paste(image, (col * imageres[0] // res_fraction, row * imageres[1] // res_fraction))
     return canvas
@@ -283,8 +287,8 @@ class EvalDataset():
         self.opt.no_flip = True
         self.root = opt.dataroot
         
-        self.dirA = self.root + "/testAfull"
-        self.dirB = self.root + "/testBfull"
+        self.dirA = self.root + "/testA"
+        self.dirB = self.root + "/testB"
         
         self.pathsA = get_image_paths(self.dirA)
         self.pathsB = get_image_paths(self.dirB)
