@@ -170,6 +170,17 @@ def get_transform(opt, method=Image.BICUBIC, convert=True):
     
     return transforms.Compose(transform_list)
 
+def get_transform_eval(opt, method=Image.BICUBIC, convert=True):
+    transform_list = []
+
+    transform_list.append(transforms.Lambda(lambda img: __make_power_base(img, base=4, method=method)))
+
+    if convert:
+        transform_list += [transforms.ToTensor()]
+        transform_list += [transforms.Normalize([0.5]*opt.n_input, [0.5]*opt.n_input)]
+    
+    return transforms.Compose(transform_list)
+
 
 
 def __resize(image, shape, method=Image.BICUBIC):
