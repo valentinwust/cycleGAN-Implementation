@@ -303,7 +303,7 @@ class GeneratorTestModel():
             E.g. for model name test_model, loads the models
             checkpoints/test_model/models/nameG_A.pth etc.
         """
-        path = self.opt.checkpoints_dir +f"/{self.name}/models/model_{detail_name}.pth"
+        path = self.opt.checkpoints_dir +f"/{self.name}/models/{detail_name}.pth"
         self.netG.module.load_state_dict(torch.load(path))
     
     def save_generated(self, data):
