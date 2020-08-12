@@ -297,6 +297,7 @@ class EvalDataset():
         self.opt = opt
         self.opt.no_flip = True
         self.root = opt.dataroot
+        self.channels = opt.n_input
         
         self.dirA = self.root + "/testA"
         self.dirB = self.root + "/testB"
@@ -316,16 +317,17 @@ class EvalDataset():
         """ 
         """
         
-        path = self.pathsA[index]
-        name, file_type = os.path.splitext(os.path.basename(path))
-        imgA = Image.open(path)
-
-        path = self.pathsB[index]
-        name, file_type = os.path.splitext(os.path.basename(path))
-        imgB = Image.open(path)
+        A_path = self.pathsA[index]
+        B_path = self.pathsB[index]
         
-        A = self.transform(imgA).unsqueeze(0)
-        B = self.transform(imgB).unsqueeze(0)
+        A_img = np.array(Image.open(A_path))[...,:self.channels]
+        B_img = np.array(Image.open(B_path))[...,:self.channels]
+        
+        A = self.transform_A(Image.fromarray(A_img))
+        B = self.transform_B(Image.fromarray(B_img))
+
+        #A = self.transform(imgA).unsqueeze(0)
+        #B = self.transform(imgB).unsqueeze(0)
 
         return {'A': A, 'B': B}
         
@@ -340,6 +342,7 @@ class TestDataset():
         self.opt = opt
         self.opt.no_flip = True
         self.root = opt.dataroot
+        self.channels = opt.n_input
         
         self.dir_ = self.root
         
@@ -355,9 +358,11 @@ class TestDataset():
         path = self.paths[index]
         name, file_type = os.path.splitext(os.path.basename(path))
         
-        img = Image.open(path)
+        #img = Image.open(path)
+        A_img = np.array(Image.open(path))[...,:self.channels]
         
-        A = self.transform(img).unsqueeze(0)
+        #A = self.transform(img).unsqueeze(0)
+        A = self.transform_A(Image.fromarray(A_img))
 
         return {'A': A, 'A_name': name}
         
