@@ -14,6 +14,10 @@ To continue training from the latest version of a model, add --load_model. The e
 
 All other optional flags can be found at the beginning of util.py with a short explanation. --name and --dataroot are always required, all other flags are optional.
 
+### Dataset
+
+The dataset should contain two folders, trainA and trainB, with training images from the two domains. To avoid fixed pairs, the dataloader iterates through all (shuffled) images in domain A, and pairs each of them with a random image from domain B.
+
 ## Testing
 
 For testing, run test.py with the following flags:
