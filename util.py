@@ -323,8 +323,8 @@ class EvalDataset():
         A_img = np.array(Image.open(A_path))[...,:self.channels]
         B_img = np.array(Image.open(B_path))[...,:self.channels]
         
-        A = self.transform_A(Image.fromarray(A_img))
-        B = self.transform_B(Image.fromarray(B_img))
+        A = self.transform(Image.fromarray(A_img)).unsqueeze(0)
+        B = self.transform(Image.fromarray(B_img)).unsqueeze(0)
 
         #A = self.transform(imgA).unsqueeze(0)
         #B = self.transform(imgB).unsqueeze(0)
@@ -362,7 +362,7 @@ class TestDataset():
         A_img = np.array(Image.open(path))[...,:self.channels]
         
         #A = self.transform(img).unsqueeze(0)
-        A = self.transform_A(Image.fromarray(A_img))
+        A = self.transform(Image.fromarray(A_img)).unsqueeze(0)
 
         return {'A': A, 'A_name': name}
         
