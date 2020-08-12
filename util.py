@@ -68,7 +68,7 @@ def tensor_to_image(image,index=0):
 def draw_multires_figure(images, n_columns, imageres=(1920, 1080)):
     #check whter its enough iamges for columns or take the first n images
     imageres = np.shape(images)[1:3]
-    canvas = Image.new('RGB', (imageres[1] * 2 - imageres[1]//(2**n_columns), imageres[0] * 2), 'white') #pich the right resolution
+    canvas = Image.new('RGB', (imageres[1] * 2 - imageres[1]//(2**(n_columns-1)), imageres[0] * 2), 'white') #pich the right resolution
     n_images = 2 ** (n_columns + 1) - 2
     images = np.tile(images, (n_images//images.shape[0] + 1, 1, 1, 1))
     image_iter = iter(list(images))
