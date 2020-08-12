@@ -200,7 +200,7 @@ class CycleGANModel():
         for visual, image in visuals.items():
             path = self.opt.checkpoints_dir +"/{self.opt.name}/images/{visual}_{self.step}.png"
             wandb.log({visual: [wandb.Image(image, caption=visual)]}, step=self.step)
-            self.save_image(path, image)
+            save_image(path, image)
       
     def evaluate(self, list_of_images, **kwargs):
         """ evaluate test iamges and save multires grid

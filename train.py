@@ -1,6 +1,7 @@
 import time
 import torch
 from tqdm import tqdm
+import numpy as np
 
 import util
 from model import CycleGANModel
@@ -86,6 +87,8 @@ def train(model, opt):
 
         if epoch % opt.save_epoch_freq == 0:
             model.save_model()
+        if epoch % opt.eval_epoch_freq == 0:
+            model.evaluate(list_of_eval_images)
 
 
 if __name__ == '__main__':
