@@ -9,3 +9,8 @@ models.ipynb
 checkpoints
 datasets
 train_test_stuff.py
+*.log
+*.yaml
+*.jsonl
+*.json
+*.png

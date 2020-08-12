@@ -17,7 +17,7 @@ from test import test
 
 def train(model, opt):
 
-    dataloader = CustomDataLoader(opt) # Dataloader, training loop with enumerate(dataloader) etc.
+    dataloader = CustomDataLoader(opt)
     print("Dataloader initialized")
 
     def print_logs(**kwargs):
@@ -25,13 +25,14 @@ def train(model, opt):
 
     def call_breakpoint(**kwargs):
          breakpoint()
-
-    ed = EvalDataset(opt)
-    list_of_eval_images = []
-    np.random.seed(42)
-    for i in range(20):
-        data_dict = ed[np.random.randint(0, len(ed))]
-        list_of_eval_images.append(data_dict)
+    
+    if opt.use_eval:
+        ed = EvalDataset(opt)
+        list_of_eval_images = []
+        np.random.seed(42)
+        for i in range(20):
+            data_dict = ed[np.random.randint(0, len(ed))]
+            list_of_eval_images.append(data_dict)
 
     #start hotkey instance
     hotkeys = util.Hotkey_handler()
@@ -76,8 +77,6 @@ def train(model, opt):
                 model.print_logs(print_fn=log_bar.set_description_str)
             if model.step % opt.visual_batch_freq == 0:
                 model.save_visuals()
-            #if epoch % opt.eval_epoch_freq == 0:
-            #    model.evaluate()
 
             #key activated hotkeys and call their respective functions
             functions2call = hotkeys.get_function_list()
@@ -87,7 +86,7 @@ def train(model, opt):
 
         if epoch % opt.save_epoch_freq == 0:
             model.save_model()
-        if epoch % opt.eval_epoch_freq == 0:
+        if opt.use_eval and epoch % opt.eval_epoch_freq == 0:
             model.evaluate(list_of_eval_images)
 
 
@@ -96,7 +95,7 @@ if __name__ == '__main__':
 
     model = CycleGANModel(opt)
     if opt.load_model:
-        model.load_model("latest_net_") # Load old model
+        model.load_model(opt.load_model_name) # Load old model
 
     # ----------
     #  Training

@@ -198,7 +198,7 @@ class CycleGANModel():
         """
         visuals = self.get_visuals()
         for visual, image in visuals.items():
-            path = self.opt.checkpoints_dir +"/{self.opt.name}/images/{visual}_{self.step}.png"
+            path = self.opt.checkpoints_dir +f"/{self.opt.name}/images/{visual}_{self.step}.png"
             wandb.log({visual: [wandb.Image(image, caption=visual)]}, step=self.step)
             save_image(path, image)
       
